@@ -49,14 +49,16 @@ def get_video_details(video_ids):
                 or thumbnails.get("default", {}).get("url")
             )
 
-            if thumbnail:
-                videos.append({
-                    "id": item["id"],
-                    "title": item["snippet"]["title"],
-                    "channel": item["snippet"]["channelTitle"],
-                    "thumbnail": thumbnail,
-                    "views": views
-                })
+            if not thumbnail:
+                continue
+
+            videos.append({
+                "id": item["id"],
+                "title": item["snippet"]["title"],
+                "channel": item["snippet"]["channelTitle"],
+                "thumbnail": thumbnail,
+                "views": views
+            })
 
     return videos
 
@@ -77,7 +79,9 @@ def get_recommendations(seen):
         "entertainment",
         "popular videos",
         "viral videos",
-        "interesting videos"
+        "interesting videos",
+        "fun videos",
+        "best videos"
     ]
 
     random.shuffle(terms)
@@ -105,8 +109,16 @@ def get_recommendations(seen):
         for item in response.json().get("items", []):
             video_id = item.get("id", {}).get("videoId")
 
-            if video_id and video_id not in video_ids and video_id not in seen:
-                video_ids.append(video_id)
+            if not video_id:
+                continue
+
+            if video_id in video_ids:
+                continue
+
+            if video_id in seen:
+                continue
+
+            video_ids.append(video_id)
 
     random.shuffle(video_ids)
 
@@ -161,13 +173,15 @@ def search_videos(query, page_token=None):
             or thumbnails.get("default", {}).get("url")
         )
 
-        if thumbnail:
-            videos.append({
-                "id": video_id,
-                "title": item["snippet"]["title"],
-                "channel": item["snippet"]["channelTitle"],
-                "thumbnail": thumbnail
-            })
+        if not thumbnail:
+            continue
+
+        videos.append({
+            "id": video_id,
+            "title": item["snippet"]["title"],
+            "channel": item["snippet"]["channelTitle"],
+            "thumbnail": thumbnail
+        })
 
     return videos, data.get("nextPageToken")
 
@@ -187,7 +201,11 @@ def recommendations():
     seen = set()
 
     if seen_text:
-        seen = set(seen_text.split(","))
+        seen = set(
+            video_id
+            for video_id in seen_text.split(",")
+            if video_id
+        )
 
     videos = get_recommendations(seen)
 
@@ -229,4 +247,7 @@ def view(video_id):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )
