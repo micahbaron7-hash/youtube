@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Vibe</title>
 
     <style>
@@ -134,6 +134,30 @@
             font-size: 18px;
         }
 
+        .load-area {
+            text-align: center;
+            margin: 45px 0 20px;
+        }
+
+        .load-button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            background: #292929;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .load-button:hover {
+            background: #383838;
+        }
+
+        .load-button:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
         @media (max-width: 700px) {
             header {
                 padding: 0 12px;
@@ -161,9 +185,10 @@
 
     <div class="logo">Vibe</div>
 
-    <form class="search" action="/" method="GET">
+    <form class="search" id="searchForm">
 
         <input
+            id="searchInput"
             type="text"
             name="q"
             placeholder="Search videos..."
@@ -195,50 +220,226 @@
 
     </div>
 
-{% elif videos %}
-
-    <div class="grid">
-
-        {% for video in videos %}
-
-        <a class="card" href="/view/{{ video.id }}">
-
-            <img
-                class="thumbnail"
-                src="{{ video.thumbnail }}"
-                alt=""
-            >
-
-            <div class="title">
-                {{ video.title }}
-            </div>
-
-            <div class="channel">
-                {{ video.channel }}
-            </div>
-
-        </a>
-
-        {% endfor %}
-
-    </div>
-
-{% elif query %}
-
-    <div class="empty">
-        No results found.
-    </div>
-
 {% else %}
 
-    <div class="empty">
-        Search for something to watch.
+    <div id="results" class="grid"></div>
+
+    <div id="emptyMessage" class="empty">
+        <button
+            id="loadButton"
+            class="load-button">
+            Load Something to Watch
+        </button>
+    </div>
+
+    <div id="loadArea" class="load-area" style="display:none;">
+
+        <button
+            id="moreButton"
+            class="load-button">
+            Load More Results
+        </button>
+
     </div>
 
 {% endif %}
 
 </main>
 
+<script>
+const results = document.getElementById("results");
+const emptyMessage = document.getElementById("emptyMessage");
+const loadButton = document.getElementById("loadButton");
+const loadArea = document.getElementById("loadArea");
+const moreButton = document.getElementById("moreButton");
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+
+let seenVideos = new Set();
+let currentQuery = "";
+let nextPage = "";
+let loading = false;
+
+function addVideos(videos) {
+    for (const video of videos) {
+
+        if (seenVideos.has(video.id)) {
+            continue;
+        }
+
+        seenVideos.add(video.id);
+
+        const card = document.createElement("a");
+
+        card.className = "card";
+        card.href = "/view/" + video.id;
+
+        const image = document.createElement("img");
+
+        image.className = "thumbnail";
+        image.src = video.thumbnail;
+        image.alt = "";
+
+        const title = document.createElement("div");
+
+        title.className = "title";
+        title.textContent = video.title;
+
+        const channel = document.createElement("div");
+
+        channel.className = "channel";
+        channel.textContent = video.channel;
+
+        card.appendChild(image);
+        card.appendChild(title);
+        card.appendChild(channel);
+
+        results.appendChild(card);
+    }
+}
+
+async function loadRecommendations() {
+
+    if (loading) {
+        return;
+    }
+
+    loading = true;
+
+    loadButton.disabled = true;
+    loadButton.textContent = "Loading...";
+
+    const seen = Array.from(seenVideos).join(",");
+
+    try {
+
+        const response = await fetch(
+            "/recommendations?seen=" + encodeURIComponent(seen)
+        );
+
+        const data = await response.json();
+
+        addVideos(data.videos);
+
+        if (data.videos.length > 0) {
+            emptyMessage.style.display = "none";
+            loadArea.style.display = "block";
+        } else {
+            loadButton.textContent = "No videos found";
+        }
+
+    } catch (error) {
+
+        loadButton.disabled = false;
+        loadButton.textContent = "Try Again";
+    }
+
+    loading = false;
+
+    if (seenVideos.size > 0) {
+        moreButton.disabled = false;
+        moreButton.textContent = "Load More Results";
+    }
+}
+
+async function searchVideos(query, pageToken = "") {
+
+    if (loading) {
+        return;
+    }
+
+    loading = true;
+
+    moreButton.disabled = true;
+    moreButton.textContent = "Loading...";
+
+    let url =
+        "/search?q=" +
+        encodeURIComponent(query);
+
+    if (pageToken) {
+        url += "&page=" + encodeURIComponent(pageToken);
+    }
+
+    try {
+
+        const response = await fetch(url);
+
+        const data = await response.json();
+
+        addVideos(data.videos);
+
+        nextPage = data.next_page || "";
+
+        emptyMessage.style.display = "none";
+
+        if (nextPage) {
+            loadArea.style.display = "block";
+            moreButton.textContent = "Load More Results";
+            moreButton.disabled = false;
+        } else {
+            loadArea.style.display = "none";
+        }
+
+    } catch (error) {
+
+        moreButton.textContent = "Try Again";
+        moreButton.disabled = false;
+    }
+
+    loading = false;
+}
+
+loadButton.addEventListener("click", function() {
+
+    loadRecommendations();
+
+});
+
+moreButton.addEventListener("click", function() {
+
+    if (currentQuery) {
+
+        if (nextPage) {
+            searchVideos(currentQuery, nextPage);
+        }
+
+    } else {
+
+        loadRecommendations();
+
+    }
+
+});
+
+searchForm.addEventListener("submit", function(event) {
+
+    event.preventDefault();
+
+    const query = searchInput.value.trim();
+
+    if (!query) {
+        return;
+    }
+
+    currentQuery = query;
+    nextPage = "";
+    seenVideos.clear();
+
+    results.innerHTML = "";
+
+    emptyMessage.style.display = "none";
+
+    loadArea.style.display = "block";
+
+    moreButton.disabled = true;
+    moreButton.textContent = "Loading...";
+
+    searchVideos(query);
+
+});
+
+</script>
+
 </body>
 </html>
-
