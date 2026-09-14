@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Vibe</title>
 
     <style>
+
         * {
             box-sizing: border-box;
         }
@@ -34,6 +41,7 @@
             font-size: 28px;
             font-weight: bold;
             margin-right: 35px;
+            white-space: nowrap;
         }
 
         .search {
@@ -54,6 +62,10 @@
             outline: none;
         }
 
+        .search input:focus {
+            border-color: #666;
+        }
+
         .search button {
             width: 70px;
             border: 1px solid #444;
@@ -68,13 +80,31 @@
             background: #383838;
         }
 
+        .settings-button {
+            margin-left: 15px;
+            background: #292929;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .settings-button:hover {
+            background: #383838;
+        }
+
         main {
             padding: 30px;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns:
+                repeat(auto-fill, minmax(280px, 1fr));
             gap: 28px 18px;
             max-width: 1500px;
             margin: auto;
@@ -158,7 +188,72 @@
             cursor: wait;
         }
 
+        .settings-panel {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .settings-box {
+            width: 90%;
+            max-width: 400px;
+            background: #191919;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .settings-box h2 {
+            margin-top: 0;
+        }
+
+        .settings-box label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+        }
+
+        .settings-box input {
+            width: 100%;
+            padding: 12px;
+            background: #0f0f0f;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .settings-box input:focus {
+            border-color: #666;
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .settings-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #292929;
+            color: white;
+            cursor: pointer;
+        }
+
+        .settings-buttons button:hover {
+            background: #383838;
+        }
+
         @media (max-width: 700px) {
+
             header {
                 padding: 0 12px;
             }
@@ -175,17 +270,32 @@
             .grid {
                 grid-template-columns: 1fr;
             }
+
+            .settings-button {
+                margin-left: 8px;
+            }
+
         }
+
     </style>
+
 </head>
+
 
 <body>
 
+
 <header>
 
-    <div class="logo">Vibe</div>
+    <div class="logo">
+        Vibe
+    </div>
 
-    <form class="search" id="searchForm">
+
+    <form
+        class="search"
+        id="searchForm"
+    >
 
         <input
             id="searchInput"
@@ -196,15 +306,29 @@
             autocomplete="off"
         >
 
-        <button type="submit">⌕</button>
+        <button type="submit">
+            ⌕
+        </button>
 
     </form>
 
+
+    <button
+        id="settingsButton"
+        class="settings-button"
+        title="Settings"
+    >
+        ⚙
+    </button>
+
 </header>
+
 
 <main>
 
+
 {% if watch_id %}
+
 
     <div class="watch">
 
@@ -212,7 +336,15 @@
 
             <iframe
                 src="https://www.youtube.com/embed/{{ watch_id }}"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allow="
+                    accelerometer;
+                    autoplay;
+                    clipboard-write;
+                    encrypted-media;
+                    gyroscope;
+                    picture-in-picture;
+                    web-share
+                "
                 allowfullscreen>
             </iframe>
 
@@ -220,47 +352,159 @@
 
     </div>
 
+
 {% else %}
 
-    <div id="results" class="grid"></div>
 
-    <div id="emptyMessage" class="empty">
-        <button
-            id="loadButton"
-            class="load-button">
-            Load Something to Watch
-        </button>
+    <div
+        id="results"
+        class="grid">
     </div>
 
-    <div id="loadArea" class="load-area" style="display:none;">
+
+    <div
+        id="emptyMessage"
+        class="empty"
+    >
+
+        <button
+            id="loadButton"
+            class="load-button"
+        >
+            Load Something to Watch
+        </button>
+
+    </div>
+
+
+    <div
+        id="loadArea"
+        class="load-area"
+        style="display:none;"
+    >
 
         <button
             id="moreButton"
-            class="load-button">
+            class="load-button"
+        >
             Load More Results
         </button>
 
     </div>
 
+
 {% endif %}
+
 
 </main>
 
+
+<div
+    id="settingsPanel"
+    class="settings-panel"
+>
+
+
+    <div class="settings-box">
+
+        <h2>
+            Settings
+        </h2>
+
+
+        <label for="tabName">
+            Browser Tab Name
+        </label>
+
+
+        <input
+            id="tabName"
+            type="text"
+            maxlength="40"
+            placeholder="Vibe"
+        >
+
+
+        <div class="settings-buttons">
+
+            <button id="saveTabName">
+                Save
+            </button>
+
+            <button id="closeSettings">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
 <script>
-const results = document.getElementById("results");
-const emptyMessage = document.getElementById("emptyMessage");
-const loadButton = document.getElementById("loadButton");
-const loadArea = document.getElementById("loadArea");
-const moreButton = document.getElementById("moreButton");
-const searchForm = document.getElementById("searchForm");
-const searchInput = document.getElementById("searchInput");
+
+
+const results =
+    document.getElementById("results");
+
+
+const emptyMessage =
+    document.getElementById("emptyMessage");
+
+
+const loadButton =
+    document.getElementById("loadButton");
+
+
+const loadArea =
+    document.getElementById("loadArea");
+
+
+const moreButton =
+    document.getElementById("moreButton");
+
+
+const searchForm =
+    document.getElementById("searchForm");
+
+
+const searchInput =
+    document.getElementById("searchInput");
+
+
+const settingsButton =
+    document.getElementById("settingsButton");
+
+
+const settingsPanel =
+    document.getElementById("settingsPanel");
+
+
+const tabNameInput =
+    document.getElementById("tabName");
+
+
+const saveTabName =
+    document.getElementById("saveTabName");
+
+
+const closeSettings =
+    document.getElementById("closeSettings");
+
 
 let seenVideos = new Set();
+
 let currentQuery = "";
+
 let nextPage = "";
+
 let loading = false;
 
+
 function addVideos(videos) {
+
     for (const video of videos) {
 
         if (seenVideos.has(video.id)) {
@@ -269,34 +513,61 @@ function addVideos(videos) {
 
         seenVideos.add(video.id);
 
-        const card = document.createElement("a");
+
+        const card =
+            document.createElement("a");
 
         card.className = "card";
-        card.href = "/view/" + video.id;
 
-        const image = document.createElement("img");
+        card.href =
+            "/view/" + video.id;
 
-        image.className = "thumbnail";
-        image.src = video.thumbnail;
+
+        const image =
+            document.createElement("img");
+
+        image.className =
+            "thumbnail";
+
+        image.src =
+            video.thumbnail;
+
         image.alt = "";
 
-        const title = document.createElement("div");
 
-        title.className = "title";
-        title.textContent = video.title;
+        const title =
+            document.createElement("div");
 
-        const channel = document.createElement("div");
+        title.className =
+            "title";
 
-        channel.className = "channel";
-        channel.textContent = video.channel;
+        title.textContent =
+            video.title;
+
+
+        const channel =
+            document.createElement("div");
+
+        channel.className =
+            "channel";
+
+        channel.textContent =
+            video.channel;
+
 
         card.appendChild(image);
+
         card.appendChild(title);
+
         card.appendChild(channel);
 
+
         results.appendChild(card);
+
     }
+
 }
+
 
 async function loadRecommendations() {
 
@@ -304,142 +575,369 @@ async function loadRecommendations() {
         return;
     }
 
+
     loading = true;
 
-    loadButton.disabled = true;
-    loadButton.textContent = "Loading...";
 
-    const seen = Array.from(seenVideos).join(",");
+    if (loadButton) {
+
+        loadButton.disabled = true;
+
+        loadButton.textContent =
+            "Loading...";
+
+    }
+
+
+    if (moreButton) {
+
+        moreButton.disabled = true;
+
+        moreButton.textContent =
+            "Loading...";
+
+    }
+
+
+    const seen =
+        Array.from(seenVideos).join(",");
+
 
     try {
 
-        const response = await fetch(
-            "/recommendations?seen=" + encodeURIComponent(seen)
-        );
+        const response =
+            await fetch(
+                "/recommendations?seen=" +
+                encodeURIComponent(seen)
+            );
 
-        const data = await response.json();
+
+        const data =
+            await response.json();
+
 
         addVideos(data.videos);
 
+
         if (data.videos.length > 0) {
-            emptyMessage.style.display = "none";
-            loadArea.style.display = "block";
-        } else {
-            loadButton.textContent = "No videos found";
+
+            if (emptyMessage) {
+                emptyMessage.style.display =
+                    "none";
+            }
+
+            if (loadArea) {
+                loadArea.style.display =
+                    "block";
+            }
+
         }
+
 
     } catch (error) {
 
-        loadButton.disabled = false;
-        loadButton.textContent = "Try Again";
+        if (loadButton) {
+
+            loadButton.disabled = false;
+
+            loadButton.textContent =
+                "Try Again";
+
+        }
+
     }
+
 
     loading = false;
 
-    if (seenVideos.size > 0) {
+
+    if (moreButton) {
+
         moreButton.disabled = false;
-        moreButton.textContent = "Load More Results";
+
+        moreButton.textContent =
+            "Load More Results";
+
     }
+
 }
 
-async function searchVideos(query, pageToken = "") {
+
+async function searchVideos(
+    query,
+    pageToken = ""
+) {
 
     if (loading) {
         return;
     }
 
+
     loading = true;
 
-    moreButton.disabled = true;
-    moreButton.textContent = "Loading...";
+
+    if (moreButton) {
+
+        moreButton.disabled = true;
+
+        moreButton.textContent =
+            "Loading...";
+
+    }
+
 
     let url =
         "/search?q=" +
         encodeURIComponent(query);
 
+
     if (pageToken) {
-        url += "&page=" + encodeURIComponent(pageToken);
+
+        url +=
+            "&page=" +
+            encodeURIComponent(pageToken);
+
     }
+
 
     try {
 
-        const response = await fetch(url);
+        const response =
+            await fetch(url);
 
-        const data = await response.json();
+
+        const data =
+            await response.json();
+
 
         addVideos(data.videos);
 
-        nextPage = data.next_page || "";
 
-        emptyMessage.style.display = "none";
+        nextPage =
+            data.next_page || "";
+
+
+        if (emptyMessage) {
+            emptyMessage.style.display =
+                "none";
+        }
+
 
         if (nextPage) {
-            loadArea.style.display = "block";
-            moreButton.textContent = "Load More Results";
-            moreButton.disabled = false;
+
+            loadArea.style.display =
+                "block";
+
+            moreButton.textContent =
+                "Load More Results";
+
+            moreButton.disabled =
+                false;
+
         } else {
-            loadArea.style.display = "none";
+
+            loadArea.style.display =
+                "none";
+
         }
+
 
     } catch (error) {
 
-        moreButton.textContent = "Try Again";
-        moreButton.disabled = false;
+        moreButton.textContent =
+            "Try Again";
+
+        moreButton.disabled =
+            false;
+
     }
+
 
     loading = false;
+
 }
 
-loadButton.addEventListener("click", function() {
 
-    loadRecommendations();
+if (loadButton) {
 
-});
+    loadButton.addEventListener(
+        "click",
+        function() {
 
-moreButton.addEventListener("click", function() {
+            loadRecommendations();
 
-    if (currentQuery) {
+        }
+    );
 
-        if (nextPage) {
-            searchVideos(currentQuery, nextPage);
+}
+
+
+if (moreButton) {
+
+    moreButton.addEventListener(
+        "click",
+        function() {
+
+            if (currentQuery) {
+
+                if (nextPage) {
+
+                    searchVideos(
+                        currentQuery,
+                        nextPage
+                    );
+
+                }
+
+            } else {
+
+                loadRecommendations();
+
+            }
+
+        }
+    );
+
+}
+
+
+searchForm.addEventListener(
+    "submit",
+    function(event) {
+
+        event.preventDefault();
+
+
+        const query =
+            searchInput.value.trim();
+
+
+        if (!query) {
+            return;
         }
 
-    } else {
 
-        loadRecommendations();
+        currentQuery =
+            query;
+
+        nextPage =
+            "";
+
+        seenVideos.clear();
+
+
+        results.innerHTML =
+            "";
+
+
+        emptyMessage.style.display =
+            "none";
+
+
+        loadArea.style.display =
+            "block";
+
+
+        moreButton.disabled =
+            true;
+
+        moreButton.textContent =
+            "Loading...";
+
+
+        searchVideos(query);
 
     }
+);
 
-});
 
-searchForm.addEventListener("submit", function(event) {
+const savedTabName =
+    localStorage.getItem(
+        "vibeTabName"
+    );
 
-    event.preventDefault();
 
-    const query = searchInput.value.trim();
+if (savedTabName) {
 
-    if (!query) {
-        return;
+    document.title =
+        savedTabName;
+
+    tabNameInput.value =
+        savedTabName;
+
+}
+
+
+settingsButton.addEventListener(
+    "click",
+    function() {
+
+        settingsPanel.style.display =
+            "flex";
+
     }
+);
 
-    currentQuery = query;
-    nextPage = "";
-    seenVideos.clear();
 
-    results.innerHTML = "";
+closeSettings.addEventListener(
+    "click",
+    function() {
 
-    emptyMessage.style.display = "none";
+        settingsPanel.style.display =
+            "none";
 
-    loadArea.style.display = "block";
+    }
+);
 
-    moreButton.disabled = true;
-    moreButton.textContent = "Loading...";
 
-    searchVideos(query);
+saveTabName.addEventListener(
+    "click",
+    function() {
 
-});
+        let name =
+            tabNameInput.value.trim();
+
+
+        if (!name) {
+            name = "Vibe";
+        }
+
+
+        localStorage.setItem(
+            "vibeTabName",
+            name
+        );
+
+
+        document.title =
+            name;
+
+
+        settingsPanel.style.display =
+            "none";
+
+    }
+);
+
+
+settingsPanel.addEventListener(
+    "click",
+    function(event) {
+
+        if (event.target === settingsPanel) {
+
+            settingsPanel.style.display =
+                "none";
+
+        }
+
+    }
+);
+
 
 </script>
 
+
 </body>
+
 </html>
