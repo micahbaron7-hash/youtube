@@ -7,112 +7,169 @@ app = Flask(__name__, template_folder="hNwRt")
 
 API_KEY = os.environ.get("VIDEO_API_KEY")
 
+
 def get_random_videos():
     if not API_KEY:
         return []
 
-    response = requests.get(
-        "https://www.googleapis.com/youtube/v3/search",
-        params={
-            "part": "snippet",
-            "type": "video",
-            "maxResults": 50,
-            "order": "viewCount",
-            "key": API_KEY
-        },
-        timeout=10
-    )
+    search_terms = [
+        "music",
+        "gaming",
+        "funny",
+        "sports",
+        "movies",
+        "animation",
+        "science",
+        "technology",
+        "tutorial",
+        "entertainment"
+    ]
 
-    if not response.ok:
-        return []
+    random.shuffle(search_terms)
 
-    data = response.json()
+    video_ids = []
 
-    ids = []
-
-    for item in data.get("items", []):
-        video_id = item.get("id", {}).get("videoId")
-
-        if video_id:
-            ids.append(video_id)
-
-    if not ids:
-        return []
-
-    stats_response = requests.get(
-        "https://www.googleapis.com/youtube/v3/videos",
-        params={
-            "part": "statistics,snippet",
-            "id": ",".join(ids),
-            "key": API_KEY
-        },
-        timeout=10
-    )
-
-    if not stats_response.ok:
-        return []
-
-    videos = []
-
-    for item in stats_response.json().get("items", []):
-        try:
-            views = int(item["statistics"].get("viewCount", 0))
-        except:
-            views = 0
-
-        if views >= 1000000:
-            videos.append({
-                "id": item["id"],
-                "title": item["snippet"]["title"],
-                "channel": item["snippet"]["channelTitle"],
-                "thumbnail": item["snippet"]["thumbnails"]["high"]["url"]
-            })
-
-    random.shuffle(videos)
-
-    return videos[:24]
-
-@app.route("/")
-def home():
-    query = request.args.get("q", "").strip()
-    videos = []
-
-    if query and API_KEY:
+    for term in search_terms[:5]:
         response = requests.get(
             "https://www.googleapis.com/youtube/v3/search",
             params={
                 "part": "snippet",
-                "q": query,
+                "q": term,
                 "type": "video",
-                "maxResults": 24,
+                "maxResults": 50,
                 "key": API_KEY
             },
             timeout=10
         )
 
         if response.ok:
-            data = response.json()
-
-            for item in data.get("items", []):
+            for item in response.json().get("items", []):
                 video_id = item.get("id", {}).get("videoId")
 
-                if video_id:
+                if video_id and video_id not in video_ids:
+                    video_ids.append(video_id)
+
+    if not video_ids:
+        return []
+
+    videos = []
+
+    for i in range(0, len(video_ids), 50):
+        batch = video_ids[i:i + 50]
+
+        response = requests.get(
+            "https://www.googleapis.com/youtube/v3/videos",
+            params={
+                "part": "statistics,snippet",
+                "id": ",".join(batch),
+                "key": API_KEY
+            },
+            timeout=10
+        )
+
+        if not response.ok:
+            continue
+
+        for item in response.json().get("items", []):
+            try:
+                views = int(
+                    item.get("statistics", {}).get("viewCount", 0)
+                )
+            except:
+                views = 0
+
+            if views >= 1000000:
+                thumbnails = item["snippet"].get("thumbnails", {})
+
+                thumbnail = (
+                    thumbnails.get("high", {}).get("url")
+                    or thumbnails.get("medium", {}).get("url")
+                    or thumbnails.get("default", {}).get("url")
+                )
+
+                if thumbnail:
                     videos.append({
-                        "id": video_id,
+                        "id": item["id"],
                         "title": item["snippet"]["title"],
                         "channel": item["snippet"]["channelTitle"],
-                        "thumbnail": item["snippet"]["thumbnails"]["high"]["url"]
+                        "thumbnail": thumbnail
                     })
 
+    random.shuffle(videos)
+
+    return videos[:24]
+
+
+def search_videos(query, page_token=None):
+    if not API_KEY:
+        return [], None
+
+    params = {
+        "part": "snippet",
+        "q": query,
+        "type": "video",
+        "maxResults": 24,
+        "key": API_KEY
+    }
+
+    if page_token:
+        params["pageToken"] = page_token
+
+    response = requests.get(
+        "https://www.googleapis.com/youtube/v3/search",
+        params=params,
+        timeout=10
+    )
+
+    if not response.ok:
+        return [], None
+
+    data = response.json()
+
+    videos = []
+
+    for item in data.get("items", []):
+        video_id = item.get("id", {}).get("videoId")
+
+        if video_id:
+            thumbnails = item["snippet"].get("thumbnails", {})
+
+            thumbnail = (
+                thumbnails.get("high", {}).get("url")
+                or thumbnails.get("medium", {}).get("url")
+                or thumbnails.get("default", {}).get("url")
+            )
+
+            if thumbnail:
+                videos.append({
+                    "id": video_id,
+                    "title": item["snippet"]["title"],
+                    "channel": item["snippet"]["channelTitle"],
+                    "thumbnail": thumbnail
+                })
+
+    return videos, data.get("nextPageToken")
+
+
+@app.route("/")
+def home():
+    query = request.args.get("q", "").strip()
+    page_token = request.args.get("page", "").strip()
+
+    if query:
+        videos, next_page = search_videos(query, page_token)
     else:
         videos = get_random_videos()
+        next_page = None
 
     return render_template(
         "bYxQc.html",
         videos=videos,
         query=query,
+        next_page=next_page,
         watch_id=None
     )
+
 
 @app.route("/view/<video_id>")
 def view(video_id):
@@ -120,8 +177,10 @@ def view(video_id):
         "bYxQc.html",
         videos=[],
         query="",
+        next_page=None,
         watch_id=video_id
     )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
