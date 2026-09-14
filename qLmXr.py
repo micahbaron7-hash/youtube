@@ -37,6 +37,8 @@ def get_random_videos():
                 "q": term,
                 "type": "video",
                 "maxResults": 50,
+                "relevanceLanguage": "en",
+                "regionCode": "US",
                 "key": API_KEY
             },
             timeout=10
@@ -109,6 +111,8 @@ def search_videos(query, page_token=None):
         "q": query,
         "type": "video",
         "maxResults": 24,
+        "relevanceLanguage": "en",
+        "regionCode": "US",
         "key": API_KEY
     }
 
@@ -155,19 +159,24 @@ def search_videos(query, page_token=None):
 def home():
     query = request.args.get("q", "").strip()
     page_token = request.args.get("page", "").strip()
+    load = request.args.get("load", "").strip()
+
+    videos = []
+    next_page = None
 
     if query:
         videos, next_page = search_videos(query, page_token)
-    else:
+
+    elif load == "1":
         videos = get_random_videos()
-        next_page = None
 
     return render_template(
         "bYxQc.html",
         videos=videos,
         query=query,
         next_page=next_page,
-        watch_id=None
+        watch_id=None,
+        loaded=bool(load)
     )
 
 
@@ -178,7 +187,8 @@ def view(video_id):
         videos=[],
         query="",
         next_page=None,
-        watch_id=video_id
+        watch_id=video_id,
+        loaded=False
     )
 
 
