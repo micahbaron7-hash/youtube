@@ -1,0 +1,261 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #0f0f0f;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            border-bottom: 1px solid #292929;
+            background: #0f0f0f;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-right: 35px;
+        }
+
+        .search {
+            display: flex;
+            width: 100%;
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .search input {
+            flex: 1;
+            background: #191919;
+            border: 1px solid #444;
+            color: white;
+            padding: 14px 18px;
+            font-size: 16px;
+            border-radius: 25px 0 0 25px;
+            outline: none;
+        }
+
+        .search button {
+            width: 70px;
+            border: 1px solid #444;
+            background: #292929;
+            color: white;
+            border-radius: 0 25px 25px 0;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .search button:hover {
+            background: #383838;
+        }
+
+        main {
+            padding: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 28px 18px;
+            max-width: 1500px;
+            margin: auto;
+        }
+
+        .card {
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+            background: #222;
+        }
+
+        .title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 11px;
+            line-height: 1.3;
+        }
+
+        .channel {
+            color: #999;
+            font-size: 14px;
+            margin-top: 7px;
+        }
+
+        .watch {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: black;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .player iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .empty {
+            text-align: center;
+            color: #888;
+            margin-top: 100px;
+            font-size: 18px;
+        }
+
+        @media (max-width: 700px) {
+            header {
+                padding: 0 12px;
+            }
+
+            .logo {
+                font-size: 22px;
+                margin-right: 15px;
+            }
+
+            main {
+                padding: 15px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <div class="logo">Vibe</div>
+
+    <form class="search" action="/" method="GET">
+
+        <input
+            type="text"
+            name="q"
+            placeholder="Search videos..."
+            value="{{ query }}"
+            autocomplete="off"
+        >
+
+        <button type="submit">⌕</button>
+
+    </form>
+
+</header>
+
+<main>
+
+{% if watch_id %}
+
+    <div class="watch">
+
+        <div class="player">
+
+            <iframe
+                src="https://www.youtube.com/embed/{{ watch_id }}"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen>
+            </iframe>
+
+        </div>
+
+    </div>
+
+{% elif videos %}
+
+    <div class="grid">
+
+        {% for video in videos %}
+
+        <a class="card" href="/view/{{ video.id }}">
+
+            <img
+                class="thumbnail"
+                src="{{ video.thumbnail }}"
+                alt=""
+            >
+
+            <div class="title">
+                {{ video.title }}
+            </div>
+
+            <div class="channel">
+                {{ video.channel }}
+            </div>
+
+        </a>
+
+        {% endfor %}
+
+    </div>
+
+{% elif query %}
+
+    <div class="empty">
+        No results found.
+    </div>
+
+{% else %}
+
+    <div class="empty">
+        Search for something to watch.
+    </div>
+
+{% endif %}
+
+</main>
+
+</body>
+</html>
+```
+
+Then:
+
+1. Scroll to the bottom.
+2. Click **Commit changes**.
+3. Confirm the commit.
+
+After that, your GitHub repository should look like:
+
+```text
+qLmXr.py
+vPzKa.txt
+hNwRt/
+    bYxQc.html
+```
+
+**Don't go to Render yet.** Tell me when you've committed the webpage, and we'll do the next step: **getting the API key**.
