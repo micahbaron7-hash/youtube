@@ -1,11 +1,9 @@
-```python
 import os
 import requests
 import psycopg2
 
 API_KEY = os.environ.get("VIDEO_API_KEY")
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
 
 TOPICS = [
     "music",
@@ -30,16 +28,14 @@ TOPICS = [
     "travel"
 ]
 
+SEARCHES_PER_RUN = 5
+
 
 def get_db():
-
-    return psycopg2.connect(
-        DATABASE_URL
-    )
+    return psycopg2.connect(DATABASE_URL)
 
 
 def search_youtube(query):
-
     response = requests.get(
         "https://www.googleapis.com/youtube/v3/search",
         params={
@@ -55,22 +51,14 @@ def search_youtube(query):
     )
 
     if not response.ok:
-
-        print(
-            "YouTube error:",
-            response.text
-        )
-
+        print("YouTube search error:", response.text)
         return []
 
     data = response.json()
 
     videos = []
 
-    for item in data.get(
-        "items",
-        []
-    ):
+    for item in data.get("items", []):
 
         video_id = item.get(
             "id",
@@ -80,7 +68,12 @@ def search_youtube(query):
         if not video_id:
             continue
 
-        thumbnails = item["snippet"].get(
+        snippet = item.get(
+            "snippet",
+            {}
+        )
+
+        thumbnails = snippet.get(
             "thumbnails",
             {}
         )
@@ -105,8 +98,14 @@ def search_youtube(query):
 
         videos.append({
             "id": video_id,
-            "title": item["snippet"]["title"],
-            "channel": item["snippet"]["channelTitle"],
+            "title": snippet.get(
+                "title",
+                ""
+            ),
+            "channel": snippet.get(
+                "channelTitle",
+                ""
+            ),
             "thumbnail": thumbnail
         })
 
@@ -129,40 +128,36 @@ def get_details(video_ids):
     )
 
     if not response.ok:
-
-        print(
-            "Details error:",
-            response.text
-        )
-
+        print("YouTube details error:", response.text)
         return []
 
     data = response.json()
 
     videos = []
 
-    for item in data.get(
-        "items",
-        []
-    ):
+    for item in data.get("items", []):
+
+        statistics = item.get(
+            "statistics",
+            {}
+        )
 
         try:
-
             views = int(
-                item.get(
-                    "statistics",
-                    {}
-                ).get(
+                statistics.get(
                     "viewCount",
                     0
                 )
             )
-
         except Exception:
-
             views = 0
 
-        thumbnails = item["snippet"].get(
+        snippet = item.get(
+            "snippet",
+            {}
+        )
+
+        thumbnails = snippet.get(
             "thumbnails",
             {}
         )
@@ -187,8 +182,14 @@ def get_details(video_ids):
 
         videos.append({
             "id": item["id"],
-            "title": item["snippet"]["title"],
-            "channel": item["snippet"]["channelTitle"],
+            "title": snippet.get(
+                "title",
+                ""
+            ),
+            "channel": snippet.get(
+                "channelTitle",
+                ""
+            ),
             "thumbnail": thumbnail,
             "views": views
         })
@@ -198,103 +199,101 @@ def get_details(video_ids):
 
 def save_videos(videos):
 
-    conn = get_db()
+    if not videos:
+        return 0
 
+    conn = get_db()
     cur = conn.cursor()
+
+    saved = 0
 
     for video in videos:
 
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO videos
             (id, title, channel, thumbnail, views)
             VALUES (%s, %s, %s, %s, %s)
+
             ON CONFLICT (id)
             DO UPDATE SET
                 title = EXCLUDED.title,
                 channel = EXCLUDED.channel,
                 thumbnail = EXCLUDED.thumbnail,
                 views = EXCLUDED.views
-        """, (
-            video["id"],
-            video["title"],
-            video["channel"],
-            video["thumbnail"],
-            video["views"]
-        ))
+            """,
+            (
+                video["id"],
+                video["title"],
+                video["channel"],
+                video["thumbnail"],
+                video["views"]
+            )
+        )
+
+        saved += 1
 
     conn.commit()
 
     cur.close()
-
     conn.close()
+
+    return saved
 
 
 def main():
 
     if not API_KEY:
-
-        print(
-            "VIDEO_API_KEY is missing"
-        )
-
+        print("VIDEO_API_KEY is missing")
         return
 
     if not DATABASE_URL:
-
-        print(
-            "DATABASE_URL is missing"
-        )
-
+        print("DATABASE_URL is missing")
         return
 
+    print("Starting Vibe indexer...")
 
-    print(
-        "Starting Vibe indexer..."
-    )
+    topics = TOPICS[:SEARCHES_PER_RUN]
 
+    total = 0
 
-    for topic in TOPICS:
+    for topic in topics:
+
+        print()
+        print("Searching:", topic)
+
+        results = search_youtube(topic)
 
         print(
-            "Searching:",
-            topic
+            "Found:",
+            len(results)
         )
-
-
-        results = search_youtube(
-            topic
-        )
-
 
         ids = [
             video["id"]
             for video in results
         ]
 
-
-        videos = get_details(
-            ids
-        )
-
-
-        save_videos(
-            videos
-        )
-
+        videos = get_details(ids)
 
         print(
-            "Saved",
-            len(videos),
-            "videos"
+            "Got details:",
+            len(videos)
         )
 
+        saved = save_videos(videos)
 
-    print(
-        "Indexer finished."
-    )
+        print(
+            "Saved:",
+            saved
+        )
+
+        total += saved
+
+    print()
+    print("Indexer finished.")
+    print("Total processed:", total)
 
 
 if __name__ == "__main__":
-
     main()
-```
